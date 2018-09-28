@@ -17,6 +17,7 @@ NEWSPIDER_MODULE = 'Scraper.spiders'
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'Scraper (+http://www.yourdomain.com)'
+USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36'
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
@@ -88,3 +89,10 @@ ROBOTSTXT_OBEY = True
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+# Db connection
+ITEM_PIPELINES = {'Scraper.pipelines.ScraperPipeline' : 300, }
+
+MONGODB_SERVER = "mongodb://localhost:27017/"
+MONGODB_DB = "scraper"
+MONGODB_COLLECTION = "items"

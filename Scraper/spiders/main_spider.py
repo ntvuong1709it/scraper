@@ -1,5 +1,7 @@
 import scrapy
-import pymongo
+from Scraper.items import ScraperItem
+from bs4 import BeautifulSoup
+from scrapy import Selector
 
 class MainSpider(scrapy.Spider):
     name = "main"
@@ -15,25 +17,11 @@ class MainSpider(scrapy.Spider):
     def parse(self, response):
         # Amazon HTML syntax is FKING SHIT. So we need to fix them
         # https://github.com/scrapy/scrapy/issues/1968
-        from bs4 import BeautifulSoup
         soup = BeautifulSoup(response.body, "lxml")
-        from scrapy import Selector
         response = Selector(text=soup.prettify())
 
         reviews = []
 
-        rating = response.css("#acrPopover").xpath('@title').extract_first(default='not-found')
-        productTitle = response.css("#productTitle::text").extract_first(default='not-found')
-        productTitleFormatted = productTitle.replace("\n", "").strip()
-        totalReview = response.css(".totalReviewCount::text").extract_first().strip()
-        price = response.css("#priceblock_ourprice::text").extract_first()
-
-        print('================= Extracting data =====================')
-        print('- Product Title: %s' % productTitleFormatted)
-        print('- Rating: %s' % rating)
-        print('- Total review: %s' % totalReview)
-
-        print('- Recent review:')
         recentReviews = response.css("#most-recent-reviews-content").xpath("//div[@data-hook='recent-review']")
         for recentReview in recentReviews:
             reviewer = recentReview.css(".a-profile-name::text").extract_first().strip()
@@ -42,17 +30,12 @@ class MainSpider(scrapy.Spider):
 
             reviews.append({'reviewer':reviewer, 'title':reviewTitle, 'content':reviewBody})
 
-        item = { 'productTitle': productTitle, 'rating': rating, 'totalReview':totalReview, 'price':price, 'reviews': reviews }
+        item = ScraperItem()
+        item['productTitle']  = response.css("#productTitle::text").extract_first(default='not-found').strip()
+        item['rating']        = response.css("#acrPopover").xpath('@title').extract_first(default='not-found')
+        item['totalReview']   = response.css(".totalReviewCount::text").extract_first().strip()
+        item['price']         = response.css("#priceblock_ourprice::text").extract_first()
+        item['recentReviews'] = reviews
 
-        print(item)
-        self.InsertToDb(item)
-
-        print('Fking done!')
-        print('================= Extracting data =====================')
-
-    def InsertToDb(self, dict):
-        client = pymongo.MongoClient("mongodb://localhost:27017/");
-        db = client["scraper"]
-        col = db["items"]
-
-        col.insert_one(dict)
+        print('================= Done extracting data =====================')
+        yield item
